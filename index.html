@@ -504,7 +504,7 @@
   document.getElementById('clearBtn').addEventListener('click', clearLogs);
   document.getElementById('logEnabled').addEventListener('change', updateLogStatus);
 
-  ['people','hunger','sides','shime','sex','age','height','weight'].forEach(id=>{
+   ['people','hunger','sides','shime','sex','age','height','weight'].forEach(id=>{
     const el = document.getElementById(id);
     el.addEventListener('change', calc);
     el.addEventListener('input', ()=>{ if(['people','age','height','weight'].includes(id)) calc(); });
@@ -512,6 +512,8 @@
 
   updateLogStatus();
   renderStatsAndHistory();
+</script>
+
 <script>
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./service-worker.js");
