@@ -57,13 +57,6 @@
       button { flex: 1 0 100%; }
     }
   </style>
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js");
-    });
-  }
-</script>
 </head>
 <body>
   <div class="wrap">
@@ -518,6 +511,11 @@
 
   updateLogStatus();
   renderStatsAndHistory();
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js");
+}
+</script>
 </script>
 </body>
 </html>
