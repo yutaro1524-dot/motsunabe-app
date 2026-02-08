@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="ja">
+<head>
+ <link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#0b0f14" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="apple-touch-icon" href="./icon-192.png" />
+ <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>もつ鍋 食べ切り目安（試作：スープ対策＋高度版＋効果測定）</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#121826; --text:#e7eefc; --muted:#9fb2d0; --line:#22304a; --good:#16a34a; --mid:#f59e0b; --high:#ef4444; --blue:#3b82f6; }
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+           background:linear-gradient(180deg,#070a10,#0b0f14); color:var(--text); }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 18px 14px 44px; }
+    h1 { font-size: 20px; margin: 10px 0 6px; }
+    p { margin: 6px 0; color: var(--muted); line-height: 1.65; }
+    .card { background: rgba(18,24,38,.92); border: 1px solid var(--line); border-radius: 18px; padding: 14px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    label { font-size: 13px; color: var(--muted); display:block; margin-bottom: 6px; }
+    input, select, textarea { width:100%; padding: 12px 12px; border-radius: 14px; border: 1px solid var(--line);
+                    background:#0d1422; color:var(--text); font-size: 16px; outline:none; box-sizing:border-box; }
+    textarea { min-height: 84px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { border-color:var(--blue); }
+    .btns { display:flex; gap: 10px; margin-top: 12px; flex-wrap:wrap; }
+    button { flex:1; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line);
+             background:#0d1422; color:var(--text); font-size: 16px; cursor:pointer; }
+    button.primary { background:#1b2a46; border-color:#2a3b61; }
+    button.good { background: rgba(22,163,74,.15); border-color: rgba(22,163,74,.35); }
+    button.warn { background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.35); }
+    button.bad { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.35); }
+    button.ghost { background: transparent; }
+    .result { font-size: 18px; margin: 0; }
+    .big { font-size: 30px; font-weight: 800; margin: 8px 0 2px; }
+    .pill { display:inline-flex; align-items:center; gap:8px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line);
+            color: var(--muted); font-size: 12px; }
+    .dot { width:10px; height:10px; border-radius: 99px; display:inline-block; }
+    .fine { font-size: 12px; color: #8aa2c7; line-height: 1.75; white-space: pre-line; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    details { border:1px solid var(--line); border-radius:16px; padding: 10px 12px; background:#0d1422; }
+    summary { cursor:pointer; color: var(--text); font-size: 14px; }
+    ul { margin: 10px 0 0 18px; color: var(--muted); }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom:1px solid var(--line); padding: 10px 6px; text-align:left; font-size: 13px; color: var(--muted); vertical-align: top; }
+    th { color: #b7c7e6; font-weight: 600; }
+    .kpi { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:10px; }
+    .kpi > div { background:#0d1422; border:1px solid var(--line); border-radius:16px; padding:10px; }
+    .kpi .n { font-size: 20px; font-weight: 800; color: var(--text); margin-top: 4px; }
+    .toggleRow { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top: 8px; }
+    .small { font-size: 12px; color: var(--muted); }
+    .hr { height:1px; background: var(--line); margin: 12px 0; }
+    @media (max-width:640px){
+      .grid{ grid-template-columns: 1fr; }
+      .kpi{ grid-template-columns: 1fr; }
+      button { flex: 1 0 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>もつ鍋「食べ切り目安」試作（スープ対策＋高度版＋効果測定）</h1>
+
+    <div class="card">
+      <p>
+        入力は端末内で計算するだけで、<b>外部へ送信しません</b>（DBなし／サーバ送信なし）。
+        <span class="pill"><span class="dot" style="background:#64748b"></span>目安</span>
+      </p>
+
+      <div class="toggleRow">
+        <div class="small">
+          効果測定ログ（端末内のみ）
+          <div class="fine">ONにすると、このブラウザ内（localStorage）に「残った？」結果を保存して集計できます。外部送信はしません。</div>
+        </div>
+        <div>
+          <label style="margin:0">
+            <input id="logEnabled" type="checkbox" style="width:auto; transform:scale(1.2); margin-right:8px;" checked />
+            ログ保存をON
+          </label>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:12px">
+        <div>
+          <label for="people">人数</label>
+          <input id="people" type="number" min="1" step="1" value="3" />
+        </div>
+
+        <div>
+          <label for="hunger">空腹度（1〜5）</label>
+          <select id="hunger">
+            <option value="1">1（あまり空いてない）</option>
+            <option value="2">2</option>
+            <option value="3" selected>3（ふつう）</option>
+            <option value="4">4</option>
+            <option value="5">5（かなり空いてる）</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="sides">サイド予定</label>
+          <select id="sides">
+            <option value="low">少なめ（0〜1品）</option>
+            <option value="mid" selected>普通（2品くらい）</option>
+            <option value="high">多め（3品以上）</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="shime">〆を食べたい？</label>
+          <select id="shime">
+            <option value="yes">はい（ちゃんぽん/雑炊など）</option>
+            <option value="maybe" selected>どちらでも</option>
+            <option value="no">いいえ</option>
+          </select>
+        </div>
+      </div>
+
+      <details style="margin-top:12px" id="advancedBox">
+        <summary>高度版（任意）：身長・体重・年齢で微調整（外部送信なし）</summary>
+        <p class="fine" style="margin:8px 0 10px">
+          ※任意入力です。入力しても<b>外部送信しません</b>。ログ保存ONでも、ここに入れた値はログに保存しません（要約だけ保存）。
+        </p>
+        <div class="grid">
+          <div>
+            <label for="sex">性別（任意）</label>
+            <select id="sex">
+              <option value="na" selected>未選択</option>
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+            </select>
+          </div>
+          <div>
+            <label for="age">年齢（任意）</label>
+            <input id="age" type="number" min="10" max="90" step="1" placeholder="例：18" />
+          </div>
+          <div>
+            <label for="height">身長cm（任意）</label>
+            <input id="height" type="number" min="120" max="210" step="1" placeholder="例：176" />
+          </div>
+          <div>
+            <label for="weight">体重kg（任意）</label>
+            <input id="weight" type="number" min="30" max="150" step="0.1" placeholder="例：55" />
+          </div>
+        </div>
+        <p class="fine" style="margin-top:10px">
+          高度版は微調整のみ（±0.2以内）。推奨を過信しない設計です。
+        </p>
+      </details>
+
+      <div class="btns">
+        <button class="primary" id="calcBtn">計算する</button>
+        <button id="resetBtn">リセット</button>
+      </div>
+    </div>
+
+    <div class="card" id="outCard" aria-live="polite">
+      <div class="row" style="gap:12px;">
+        <div>
+          <p class="result">おすすめ（初回）</p>
+          <div class="big" id="servingsText">—</div>
+        </div>
+        <div class="pill" title="スープ余りリスク">
+          <span class="dot" id="riskDot" style="background:#64748b"></span>
+          <span id="riskText">スープ余り：—</span>
+        </div>
+      </div>
+
+      <p id="nextAction" class="fine">条件を入力して「計算する」を押してね。</p>
+
+      <div class="hr"></div>
+
+      <p class="fine"><b>効果測定（自己申告）</b><br/>
+        食後に押してください（ログ保存ONのときのみ端末内に記録します）。
+      </p>
+
+      <div class="btns">
+        <button class="good" id="btnNoLeft">残らなかった（◎）</button>
+        <button class="warn" id="btnSoupLeft">スープが残った（△）</button>
+        <button class="bad" id="btnFoodLeft">具も残った（×）</button>
+      </div>
+
+      <p class="fine" id="logStatus">ログ保存：ON（端末内のみ）</p>
+
+      <div style="margin-top:10px">
+        <p class="fine"><b>注意</b><br/>
+          ・本ツールは注文量の<strong>目安</strong>で、健康・医療的な診断ではありません。<br/>
+          ・外部送信はしません。ログ保存ONでも、この端末のブラウザ内に保存されるだけです。
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="fine"><b>集計（端末内ログ）</b></p>
+
+      <div class="kpi">
+        <div><div class="small">記録件数</div><div class="n" id="kpiTotal">0</div></div>
+        <div><div class="small">残らなかった率</div><div class="n" id="kpiSuccess">0%</div></div>
+        <div><div class="small">スープ残り率</div><div class="n" id="kpiSoup">0%</div></div>
+      </div>
+
+      <div class="btns" style="margin-top:12px">
+        <button class="primary" id="exportBtn">CSVを書き出す（端末内）</button>
+        <button class="ghost" id="clearBtn">ログを全削除</button>
+      </div>
+
+      <details style="margin-top:10px">
+        <summary>ログの内容（保存している要約）</summary>
+        <p class="fine">
+          日時／人数／空腹度／サイド量／〆意向／推奨人前／スープリスク（低中高）／結果（◎△×）／メモ（任意）。<br/>
+          高度版の身長・体重・年齢・性別はログに保存しません（入力しても記録されない）。
+        </p>
+      </details>
+
+      <div class="hr"></div>
+
+      <p class="fine"><b>履歴（最新10件）</b></p>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>条件</th>
+              <th>推奨</th>
+              <th>リスク</th>
+              <th>結果</th>
+              <th>メモ</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="6" class="muted">まだ記録がありません。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="csvCard" style="display:none">
+      <p class="fine"><b>CSV（コピーして保存）</b></p>
+      <textarea id="csvOut" readonly></textarea>
+      <div class="btns">
+        <button class="primary" id="copyCsvBtn">CSVをコピー</button>
+        <button id="closeCsvBtn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+  function roundHalfUp(x){ return Math.floor(x + 0.5); }
+  function nowIso(){ return new Date().toISOString(); }
+  function jpTime(iso){
+    try{
+      const d = new Date(iso);
+      return d.toLocaleString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    }catch{ return iso; }
+  }
+
+  function getAdvancedInputs(){
+    const sex = document.getElementById('sex').value;
+    const age = parseFloat(document.getElementById('age').value);
+    const height = parseFloat(document.getElementById('height').value);
+    const weight = parseFloat(document.getElementById('weight').value);
+    return {
+      sex,
+      age: Number.isFinite(age) ? age : null,
+      height: Number.isFinite(height) ? height : null,
+      weight: Number.isFinite(weight) ? weight : null
+    };
+  }
+
+  function advancedAdjustment(adv){
+    let adj = 0.0;
+    if (adv.height && adv.weight){
+      const h = adv.height / 100.0;
+      const bmi = adv.weight / (h*h);
+      if (bmi < 18.5) adj -= 0.05;
+      else if (bmi >= 25) adj += 0.05;
+      if (adv.weight >= 75) adj += 0.05;
+      else if (adv.weight <= 50) adj -= 0.05;
+    } else if (adv.weight){
+      if (adv.weight >= 75) adj += 0.05;
+      else if (adv.weight <= 50) adj -= 0.05;
+    }
+    if (adv.age){
+      if (adv.age <= 22) adj += 0.05;
+      else if (adv.age >= 50) adj -= 0.05;
+    }
+    if (adv.sex === 'male') adj += 0.05;
+    else if (adv.sex === 'female') adj -= 0.05;
+    return clamp(adj, -0.2, 0.2);
+  }
+
+  function soupRiskScore(hunger, sides, shime, totalServings, people){
+    let score = 0;
+    if (shime === 'no') score += 2;
+    else if (shime === 'maybe') score += 1;
+    if (sides === 'high') score += 2;
+    else if (sides === 'mid') score += 1;
+    if (hunger <= 2) score += 1;
+    if (totalServings >= people) score += 1;
+    return score;
+  }
+  function riskLabel(score){
+    if (score >= 4) return {label:"高", color:"#ef4444"};
+    if (score >= 2) return {label:"中", color:"#f59e0b"};
+    return {label:"低", color:"#16a34a"};
+  }
+
+  let lastCalc = null;
+
+  function calc(){
+    const people = clamp(parseInt(document.getElementById('people').value || '0', 10), 1, 50);
+    const hunger = parseInt(document.getElementById('hunger').value, 10);
+    const sides = document.getElementById('sides').value;
+    const shime = document.getElementById('shime').value;
+
+    let per = 0.8;
+    per += ({1:-0.2,2:-0.1,3:0.0,4:0.1,5:0.2}[hunger] ?? 0.0);
+    if (shime === 'yes') per -= 0.2;
+    else if (shime === 'maybe') per -= 0.1;
+    if (sides === 'high') per -= 0.2;
+    else if (sides === 'mid') per -= 0.1;
+
+    const adv = getAdvancedInputs();
+    per += advancedAdjustment(adv);
+    per = clamp(per, 0.4, 1.2);
+
+    let total = roundHalfUp(per * people);
+    total = Math.max(1, total);
+
+    const score = soupRiskScore(hunger, sides, shime, total, people);
+    const r = riskLabel(score);
+
+    const actions = [];
+    actions.push(`【初回】鍋は ${total}人前（目安）。足りなければ追加で調整。`);
+    actions.push(people <= 3
+      ? "【追加】足りなければ +1人前。迷ったら“半分食べてから”判断。"
+      : "【追加】大人数は早めに追加判断。足りなければ +1人前ずつ。");
+    actions.push(shime === 'yes'
+      ? "【〆】追加を終えてから〆を注文するとスープが余りにくい。"
+      : (shime === 'maybe'
+          ? "【〆】迷うなら、追加する/しないを決めた後に〆を判断（スープ対策）。"
+          : "【スープ対策】〆なし予定は、初回控えめ→追加が安全。"));
+    actions.push(sides === 'high'
+      ? "【サイド】多め予定：最初は1〜2品まで→後半に追加がロス最小。"
+      : (sides === 'mid'
+          ? "【サイド】普通：2品くらい→〆をやるなら追加は控えめが無難。"
+          : "【サイド】少なめ：足りなければ後半に1品追加。"));
+    actions.push("※目安です。体調・飲酒量・食べる速さ等で変わります。");
+
+    document.getElementById('servingsText').textContent = `${total}人前`;
+    document.getElementById('riskText').textContent = `スープ余り：${r.label}`;
+    document.getElementById('riskDot').style.background = r.color;
+    document.getElementById('nextAction').textContent = actions.join("\n");
+
+    lastCalc = {
+      ts: nowIso(),
+      people, hunger, sides, shime,
+      totalServings: total,
+      soupRisk: r.label,
+      advancedUsed: (adv.sex !== 'na' || adv.age || adv.height || adv.weight) ? "yes" : "no"
+    };
+    return lastCalc;
+  }
+
+  const LOG_KEY = "motsunabe_satiety_logs_v1";
+  function isLogEnabled(){ return document.getElementById('logEnabled').checked; }
+  function updateLogStatus(){
+    document.getElementById('logStatus').textContent = isLogEnabled()
+      ? "ログ保存：ON（端末内のみ）"
+      : "ログ保存：OFF（記録しません）";
+  }
+  function loadLogs(){
+    try{ return JSON.parse(localStorage.getItem(LOG_KEY) || "[]"); }catch{ return []; }
+  }
+  function saveLogs(logs){ localStorage.setItem(LOG_KEY, JSON.stringify(logs)); }
+  function pct(n, d){ return d ? (Math.round((n/d)*100) + "%") : "0%"; }
+
+  function renderStatsAndHistory(){
+    const logs = loadLogs();
+    const total = logs.length;
+    const ok = logs.filter(x=>x.result==="OK").length;
+    const soup = logs.filter(x=>x.result==="SOUP").length;
+
+    document.getElementById('kpiTotal').textContent = String(total);
+    document.getElementById('kpiSuccess').textContent = pct(ok, total);
+    document.getElementById('kpiSoup').textContent = pct(soup, total);
+
+    const body = document.getElementById('historyBody');
+    body.innerHTML = "";
+    const last10 = logs.slice(-10).reverse();
+    if (!last10.length){
+      body.innerHTML = '<tr><td colspan="6" class="muted">まだ記録がありません。</td></tr>';
+      return;
+    }
+    for (const x of last10){
+      const sidesLabel = x.sides==="high"?"多":(x.sides==="mid"?"普":"少");
+      const shimeLabel = x.shime==="yes"?"〆Yes":(x.shime==="maybe"?"〆?":"〆No");
+      const res = x.result==="OK" ? "◎" : (x.result==="SOUP" ? "△" : "×");
+      const adv = x.advancedUsed==="yes" ? " / 高度版" : "";
+      body.insertAdjacentHTML("beforeend",
+        `<tr>
+          <td>${jpTime(x.ts)}</td>
+          <td>${x.people}人 / 空腹${x.hunger} / サイド${sidesLabel} / ${shimeLabel}${adv}</td>
+          <td>${x.totalServings}人前</td>
+          <td>${x.soupRisk || "—"}</td>
+          <td>${res}</td>
+          <td>${(x.memo||"")}</td>
+        </tr>`
+      );
+    }
+  }
+
+  function addLog(resultCode, memo){
+    if (!isLogEnabled()) return;
+    if (!lastCalc) calc();
+    const entry = {
+      ts: nowIso(),
+      people: lastCalc.people,
+      hunger: lastCalc.hunger,
+      sides: lastCalc.sides,
+      shime: lastCalc.shime,
+      totalServings: lastCalc.totalServings,
+      soupRisk: lastCalc.soupRisk,
+      advancedUsed: lastCalc.advancedUsed,
+      result: resultCode,
+      memo: (memo || "").slice(0, 120)
+    };
+    const logs = loadLogs();
+    logs.push(entry);
+    saveLogs(logs);
+    renderStatsAndHistory();
+  }
+
+  function askMemoAndLog(code){
+    const memo = prompt("メモ（任意・120文字まで）\n例：飲み会/追加あり/〆なし など\n（キャンセル or 空欄でもOK）") || "";
+    addLog(code, memo);
+    updateLogStatus();
+  }
+
+  function toCSV(logs){
+    const header = ["ts","people","hunger","sides","shime","totalServings","soupRisk","advancedUsed","result","memo"];
+    const rows = [header.join(",")];
+    for (const x of logs){
+      const row = [
+        x.ts, x.people, x.hunger, x.sides, x.shime, x.totalServings, x.soupRisk, x.advancedUsed, x.result,
+        (x.memo ?? "").replaceAll('"','""')
+      ].map(v => `"${String(v ?? "")}"`);
+      rows.push(row.join(","));
+    }
+    return rows.join("\n");
+  }
+
+  function exportCSV(){
+    const csv = toCSV(loadLogs());
+    document.getElementById('csvOut').value = csv;
+    document.getElementById('csvCard').style.display = 'block';
+    document.getElementById('csvCard').scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  function copyCSV(){
+    const ta = document.getElementById('csvOut');
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    document.execCommand('copy');
+    alert("CSVをコピーしました。");
+  }
+
+  function closeCSV(){ document.getElementById('csvCard').style.display = 'none'; }
+  function clearLogs(){
+    if (!confirm("端末内ログを全削除します。よろしいですか？")) return;
+    localStorage.removeItem(LOG_KEY);
+    renderStatsAndHistory();
+    alert("ログを削除しました。");
+  }
+
+  function resetAll(){
+    document.getElementById('people').value = 3;
+    document.getElementById('hunger').value = 3;
+    document.getElementById('sides').value = 'mid';
+    document.getElementById('shime').value = 'maybe';
+    document.getElementById('sex').value = 'na';
+    document.getElementById('age').value = '';
+    document.getElementById('height').value = '';
+    document.getElementById('weight').value = '';
+    document.getElementById('servingsText').textContent = '—';
+    document.getElementById('riskText').textContent = 'スープ余り：—';
+    document.getElementById('riskDot').style.background = '#64748b';
+    document.getElementById('nextAction').textContent = '条件を入力して「計算する」を押してね。';
+    lastCalc = null;
+    updateLogStatus();
+  }
+
+  document.getElementById('calcBtn').addEventListener('click', calc);
+  document.getElementById('resetBtn').addEventListener('click', resetAll);
+  document.getElementById('btnNoLeft').addEventListener('click', ()=>askMemoAndLog("OK"));
+  document.getElementById('btnSoupLeft').addEventListener('click', ()=>askMemoAndLog("SOUP"));
+  document.getElementById('btnFoodLeft').addEventListener('click', ()=>askMemoAndLog("FOOD"));
+  document.getElementById('exportBtn').addEventListener('click', exportCSV);
+  document.getElementById('copyCsvBtn').addEventListener('click', copyCSV);
+  document.getElementById('closeCsvBtn').addEventListener('click', closeCSV);
+  document.getElementById('clearBtn').addEventListener('click', clearLogs);
+  document.getElementById('logEnabled').addEventListener('change', updateLogStatus);
+
+  ['people','hunger','sides','shime','sex','age','height','weight'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('change', calc);
+    el.addEventListener('input', ()=>{ if(['people','age','height','weight'].includes(id)) calc(); });
+  });
+
+  updateLogStatus();
+  renderStatsAndHistory();
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js");
+}
+</script>
+</script>
+</body>
+</html>
